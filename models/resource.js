@@ -49,16 +49,14 @@ var resourceSchema = new Schema({
                   editor: String,
                 }],select: false},
   revision:{type:Number, default:0 ,select: false},
-  // is_cta_url: {type: Boolean},
-  // cta_url: {type: String},
   is_cta_button: {type: Boolean},
-  // cta_display: {type: String},
   cardColumn:{type:Boolean},
   cta: [{
     cta_display: {type: String},
     is_cta_url: {type: Boolean},
     cta_url: {type: String},
-    cta_order: {type: Number}
+    cta_order: {type: Number},
+    is_cta_button: {type: Boolean}
   }]
 
 },{
