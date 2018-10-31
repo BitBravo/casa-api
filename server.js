@@ -21,6 +21,7 @@ var users = require('./routes/users');
 var absorb = require('./routes/absorb');
 var others = require('./routes/others');
 var secureRoute = require('./routes/secure-route');
+var histories = require('./routes/histories');
 
 var app = express();
 
@@ -54,6 +55,7 @@ app.use('/api' , auth_routes);
 app.use('/api' , users);
 app.use('/api' , absorb);
 app.use('/api' , others);
+app.use('/api' , histories);
 //verified users can access this route
 app.use('/user', passport.authenticate('jwt'), secureRoute);
 
