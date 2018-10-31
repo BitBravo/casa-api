@@ -124,22 +124,10 @@ router.post('/resource', passport.authenticate('jwt'), upload.any('file'), async
     if (req.body.publish && req.body.publish == 'true') req.body.publish = true;
     else  if (req.body.publish && req.body.publish == 'false') req.body.publish = false;
 
-
-    if (req.body.is_cta_url && req.body.is_cta_url == 'true') req.body.is_cta_url = true;
-    else if (req.body.is_cta_url && req.body.is_cta_url == 'false') req.body.is_cta_url = false;
-
-    if (req.body.is_cta_button && req.body.is_cta_button == 'true') req.body.is_cta_button = true;
-    else if (req.body.is_cta_button && req.body.is_cta_button == 'false') req.body.is_cta_button = false;
-
     req.body.creator = req.user.first_name + " " + req.user.last_name;
     req.body.admin_id = req.user._id;
 
-    try {
-        req.body.cta = req.body.cta ? JSON.parse(req.body.cta) : []
-    } catch (e){
-        req.body.cta = [];
-        console.log('unable to parse CTA')
-    }
+    req.body.cta = req.body.cta ? JSON.parse(req.body.cta) : []
 
     async.waterfall([
         function(cb) {              
@@ -227,21 +215,10 @@ router.put('/resource/:id', passport.authenticate('jwt'), upload.any('file'), as
     if (req.body.publish && req.body.publish == 'true') req.body.publish = true;
     else  if (req.body.publish && req.body.publish == 'false') req.body.publish = false;
 
-    if (req.body.is_cta_url && req.body.is_cta_url == 'true') req.body.is_cta_url = true;
-    else if (req.body.is_cta_url && req.body.is_cta_url == 'false') req.body.is_cta_url = false;
-
-    if (req.body.is_cta_button && req.body.is_cta_button == 'true') req.body.is_cta_button = true;
-    else if (req.body.is_cta_button && req.body.is_cta_button == 'false') req.body.is_cta_button = false;
-
     var id = req.params.id;
     delete req.body.creator;
 
-    try {
-        req.body.cta = req.body.cta ? JSON.parse(req.body.cta) : []
-    } catch (e){
-        req.body.cta = [];
-        console.log('unable to parse CTA')
-    }
+    req.body.cta = req.body.cta ? JSON.parse(req.body.cta) : []
 
     req.body.last_mod = Date.now();
     
@@ -382,27 +359,7 @@ router.get('/resource',async (req, res, next) => {
                     data: data
                 })
             } else{ 
-                data = JSON.parse(JSON.stringify(data));
-                data = data.map(d => {
-                    if (d.cta.length === 0) {
-                        const cta = [{
-                            cta_display: d.cta_display || "LEARN MORE",
-                            is_cta_url: d.is_cta_url || true,
-                            cta_url: d.cta_url || "www.casa.com",
-                            cta_order: 0
-                        }];
-                        delete d.cta_display;
-                        delete d.is_cta_url;
-                        delete d.cta_url;
-                        return Object.assign({}, { ...d }, { cta });
-
-                    } else {
-                        delete d.cta_display;
-                        delete d.is_cta_url;
-                        delete d.cta_url;
-                        return { ...d };
-                    }
-                })
+                data = fixCTA(data);
 
                    if(token && !token.role && token.customer_role || !token){
                       console.log(data.length);
@@ -632,7 +589,7 @@ router.get('/resource/:slug',async (req, res, next) => {
                     data: data
                 })
             } else {
-                data = JSON.parse(JSON.stringify(data))
+                data = fixCTA(data);
                 if (Slug != 'external' && Slug != 'dynamic' && Slug != 'native') {
                 
                 // if(!token && data[0].isGated){
@@ -650,8 +607,6 @@ router.get('/resource/:slug',async (req, res, next) => {
                                 increase_view_count(Slug);
                           }
                                    
-
-                          data = fixCTA(data);
                            return res.status(200).json({data:data})
                       //   }
                       //   else{
@@ -669,7 +624,6 @@ router.get('/resource/:slug',async (req, res, next) => {
                 // }
             }
             else if(token.role && (Slug == 'external' || Slug == 'dynamic' || Slug == 'native')){
-                data = fixCTA(data);
               return res.status(200).json({status: 200,data: data})
             }
            }
@@ -846,20 +800,23 @@ function fixCTA(data) {
     data = data.map(d => {
         if (d.cta.length === 0) {
             const cta = [{
-                cta_display: d.cta_display || "LEARN MORE",
-                is_cta_url: d.is_cta_url || true,
+                cta_display: d.cta_display || "Casa",
+                is_cta_url: d.is_cta_url || false,
                 cta_url: d.cta_url || "www.casa.com",
-                cta_order: 0
+                cta_order: 0,
+                is_cta_button: d.is_cta_button || false
             }];
             delete d.cta_display;
             delete d.is_cta_url;
             delete d.cta_url;
+            delete d.is_cta_button;
             return Object.assign({}, { ...d }, { cta });
 
         } else {
             delete d.cta_display;
             delete d.is_cta_url;
             delete d.cta_url;
+            delete d.is_cta_button;
             return { ...d };
         }
     })
