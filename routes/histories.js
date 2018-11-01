@@ -12,7 +12,20 @@ router.get('/histories', async (req, res, next) => {
     // filter: metadata, string
     var query = {};
     if (req.query.metadata) {
-        query.metadata = req.query.metadata;
+        try {
+            const metadata = JSON.parse(req.query.metadata);
+            for (let metaKey in metadata) {
+                query[`metadata.${metaKey}`] = metadata[metaKey];
+            }
+        } catch (error) {
+            console.log(error);
+            query.metadata = req.query.metadata;
+        }
+    }
+
+    // filter: project, string
+    if (req.query.clientId) {
+        query.clientId = req.query.clientId
     }
 
     // filter: project, string
@@ -86,7 +99,20 @@ router.get('/histories/daily', async (req, res, next) => {
     // filter: metadata, string
     var query = {};
     if (req.query.metadata) {
-        query.metadata = req.query.metadata;
+        try {
+            const metadata = JSON.parse(req.query.metadata);
+            for (let metaKey in metadata) {
+                query[`metadata.${metaKey}`] = metadata[metaKey];
+            }
+        } catch (error) {
+            console.log(error);
+            query.metadata = req.query.metadata;
+        }
+    }
+
+    // filter: project, string
+    if (req.query.clientId) {
+        query.clientId = req.query.clientId
     }
 
     // filter: project, string
@@ -195,7 +221,20 @@ router.get('/histories/hourly', async (req, res, next) => {
     // filter: metadata, string
     var query = {};
     if (req.query.metadata) {
-        query.metadata = req.query.metadata;
+        try {
+            const metadata = JSON.parse(req.query.metadata);
+            for (let metaKey in metadata) {
+                query[`metadata.${metaKey}`] = metadata[metaKey];
+            }
+        } catch (error) {
+            console.log(error);
+            query.metadata = req.query.metadata;
+        }
+    }
+
+    // filter: project, string
+    if (req.query.clientId) {
+        query.clientId = req.query.clientId
     }
 
     // filter: project, string
@@ -301,6 +340,13 @@ router.get('/histories/hourly', async (req, res, next) => {
 add a userHistory
 */
 router.get('/histories/create', async (req, res, next) => {
+    let query = req.query;
+    try {
+        query.metadata = JSON.parse(query.metadata);
+    } catch (error) {
+        console.log(error);
+    }
+
     UserHistory.create(req.query).then(function (userHistory) {
         if (userHistory) {
             return res.status(200).json({

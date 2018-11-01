@@ -10,7 +10,7 @@ var userHistorySchema = new Schema({
   eventType: { type: String, required: true },
   event: { type: String, required: true },
   content: { type: String, required: true },
-  metadata: { type: Schema.Types.Mixed, required: true },
+  metadata: { type: Object },
   ip: { type: String },
   userAgent: { type: String },
   callback: { type: String }
