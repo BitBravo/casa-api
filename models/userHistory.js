@@ -5,15 +5,19 @@ require('mongoose').Promise = global.Promise
 
 // create a schema
 var userHistorySchema = new Schema({
-  clientId: {type: String, required: true},
-  eventType: {type: String, required: true},
-  event: {type: String},
-  content: {type: String, required: true},
-  ip: {type: String}
-},{
-  timestamps: true
- });
+  user: { type: String },
+  project: { type: String },
+  eventType: { type: String, required: true },
+  event: { type: String, required: true },
+  content: { type: String, required: true },
+  metadata: { type: Schema.Types.Mixed, required: true },
+  ip: { type: String },
+  userAgent: { type: String },
+  callback: { type: String }
+}, {
+    timestamps: true
+  });
 
 var UserHistory = mongoose.model('UserHistory', userHistorySchema);
 
-module.exports = UserHistory ;
+module.exports = UserHistory;
