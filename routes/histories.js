@@ -8,9 +8,56 @@ var async = require('async');
 */
 router.get('/histories', async (req, res, next) => {
 
-    var limitOn = parseInt(req.query.count) || 10;
-    var clientId = req.query.clientId;
-    UserHistory.find({ clientId: clientId }).sort({ createdAt: 'desc' }).limit(limitOn).then(function (data) {
+    var limit = parseInt(req.query.limit) || 10;
+    // filter: metadata, string
+    var query = {};
+    if (req.query.metadata) {
+        query.metadata = req.query.metadata;
+    }
+
+    // filter: project, string
+    if (req.query.project) {
+        query.project = req.query.project
+    }
+
+    // filter: eventType, string
+    if (req.query.eventType) {
+        query.eventType = req.query.eventType
+    }
+
+    // filter: event, string
+    if (req.query.event) {
+        query.event = req.query.event
+    }
+
+
+    // filter: event, string
+    if (req.query.content) {
+        query.content = req.query.content
+    }
+
+    // filter: user, string
+    if (req.query.user) {
+        query.user = req.query.user
+    }
+
+    // filter: ip, string
+    if (req.query.ip) {
+        query.ip = req.query.ip
+    }
+
+    // filter: start, string
+    if (req.query.start) {
+        query.createdAt = { $gte: new Date(req.query.start) }
+    }
+
+    // filter: end, string
+    if (req.query.end) {
+        query.createdAt = { $lte: new Date(req.query.end) }
+    }
+
+
+    UserHistory.find(query).sort({ createdAt: 'desc' }).limit(limit).then(function (data) {
         if (data.length < 0) {
             return res.status(404).json({
                 status: 404,
@@ -30,28 +77,231 @@ router.get('/histories', async (req, res, next) => {
         })
 })
 
-router.get('/histories/create', async (req, res, next) => {
-    UserHistory.create(req.query).then(function (userHistory) {
-        if (userHistory) {
+/*
+* get all user histories by daily
+*/
+router.get('/histories/daily', async (req, res, next) => {
+
+    var limit = parseInt(req.query.limit) || 10;
+    // filter: metadata, string
+    var query = {};
+    if (req.query.metadata) {
+        query.metadata = req.query.metadata;
+    }
+
+    // filter: project, string
+    if (req.query.project) {
+        query.project = req.query.project
+    }
+
+    // filter: eventType, string
+    if (req.query.eventType) {
+        query.eventType = req.query.eventType
+    }
+
+    // filter: event, string
+    if (req.query.event) {
+        query.event = req.query.event
+    }
+
+
+    // filter: event, string
+    if (req.query.content) {
+        query.content = req.query.content
+    }
+
+    // filter: user, string
+    if (req.query.user) {
+        query.user = req.query.user
+    }
+
+    // filter: ip, string
+    if (req.query.ip) {
+        query.ip = req.query.ip
+    }
+
+    // filter: start, string
+    if (req.query.start) {
+        query.createdAt = { $gte: new Date(req.query.start) }
+    }
+
+    // filter: end, string
+    if (req.query.end) {
+        query.createdAt = { $lte: new Date(req.query.end) }
+    }
+
+
+    UserHistory.aggregate([
+        {
+            $match: query
+        },
+        {
+            $project: {
+                year: { $year: "$createdAt" },
+                month: { $month: "$createdAt" },
+                dayOfMonth: { $dayOfMonth: "$createdAt" },
+                user: 1,
+                project: 1,
+                eventType: 1,
+                event: 1,
+                content: 1,
+                metadata: 1,
+                ip: 1,
+                userAgent: 1,
+                createdAt: 1
+            }
+        },
+        {
+            $sort: { createdAt: -1 }
+        },
+        {
+            $group: {
+                _id: {
+                    year: '$year',
+                    month: '$month',
+                    dayOfMonth: '$dayOfMonth'
+                },
+                counts: { $sum: 1 },
+                items: { $push: "$$ROOT" }
+            }
+        }
+    ]).then(function (data) {
+        if (data.length < 0) {
+            return res.status(404).json({
+                status: 404,
+                data: data
+            })
+        } else
             return res.status(200).json({
                 status: 200,
-                message: "UserHistory Added Successfully"
+                data: data
             })
-        }
     })
-    .catch(function (err) {
-        return res.status(500).json({
-            status: 500,
-            message: err.message
+        .catch(function (err) {
+            return res.status(500).json({
+                status: 500,
+                message: err.message
+            })
         })
-    })
 })
+
+
+/*
+* get all user histories by daily
+*/
+router.get('/histories/hourly', async (req, res, next) => {
+
+    var limit = parseInt(req.query.limit) || 10;
+    // filter: metadata, string
+    var query = {};
+    if (req.query.metadata) {
+        query.metadata = req.query.metadata;
+    }
+
+    // filter: project, string
+    if (req.query.project) {
+        query.project = req.query.project
+    }
+
+    // filter: eventType, string
+    if (req.query.eventType) {
+        query.eventType = req.query.eventType
+    }
+
+    // filter: event, string
+    if (req.query.event) {
+        query.event = req.query.event
+    }
+
+
+    // filter: event, string
+    if (req.query.content) {
+        query.content = req.query.content
+    }
+
+    // filter: user, string
+    if (req.query.user) {
+        query.user = req.query.user
+    }
+
+    // filter: ip, string
+    if (req.query.ip) {
+        query.ip = req.query.ip
+    }
+
+    // filter: start, string
+    if (req.query.start) {
+        query.createdAt = { $gte: new Date(req.query.start) }
+    }
+
+    // filter: end, string
+    if (req.query.end) {
+        query.createdAt = { $lte: new Date(req.query.end) }
+    }
+
+
+    UserHistory.aggregate([
+        {
+            $match: query
+        },
+        {
+            $project: {
+                year: { $year: "$createdAt" },
+                month: { $month: "$createdAt" },
+                dayOfMonth: { $dayOfMonth: "$createdAt" },
+                hour: { $hour: "$createdAt" },
+                user: 1,
+                project: 1,
+                eventType: 1,
+                event: 1,
+                content: 1,
+                metadata: 1,
+                ip: 1,
+                userAgent: 1,
+                createdAt: 1
+            }
+        },
+        {
+            $sort: { createdAt: -1 }
+        }, {
+            $group: {
+                _id: {
+                    year: '$year',
+                    month: '$month',
+                    dayOfMonth: '$dayOfMonth',
+                    hour: '$hour'
+                },
+                counts: { $sum: 1 },
+                items: { $push: "$$ROOT" }
+            }
+        }
+    ]).then(function (data) {
+        if (data.length < 0) {
+            return res.status(404).json({
+                status: 404,
+                data: data
+            })
+        } else
+            return res.status(200).json({
+                status: 200,
+                data: data
+            })
+    })
+        .catch(function (err) {
+            return res.status(500).json({
+                status: 500,
+                message: err.message
+            })
+        })
+})
+
+
 
 /*
 add a userHistory
 */
-router.post('/histories', async (req, res, next) => {
-    UserHistory.create(req.body).then(function (userHistory) {
+router.get('/histories/create', async (req, res, next) => {
+    UserHistory.create(req.query).then(function (userHistory) {
         if (userHistory) {
             return res.status(200).json({
                 status: 200,
@@ -65,6 +315,6 @@ router.post('/histories', async (req, res, next) => {
                 message: err.message
             })
         })
-});
+})
 
 module.exports = router;
