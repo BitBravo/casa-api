@@ -317,24 +317,4 @@ router.get('/histories/create', async (req, res, next) => {
         })
 })
 
-/*
-add a userHistory
-*/
-router.post('/histories', async (req, res, next) => {
-    UserHistory.create(req.body).then(function (userHistory) {
-        if (userHistory) {
-            return res.status(200).json({
-                status: 200,
-                message: "UserHistory Added Successfully"
-            })
-        }
-    })
-        .catch(function (err) {
-            return res.status(500).json({
-                status: 500,
-                message: err.message
-            })
-        })
-});
-
 module.exports = router;
