@@ -9,20 +9,21 @@ var config = require('../config/conf');
 
 
 router.post('/saml', async (req, res, next) => {
+    const RelayState = JSON.parse(req.body.RelayState);
      User.update({
-          email: req.body.RelayState
+          email: RelayState['email']
         }, {
           $set: {saml_cert: req.body.SAMLResponse}
         }).then(function(data) {
-          if (req.body.originUrl) {
-            res.redirect(req.body.originUrl);
+          if (RelayState['originUrl']) {
+            res.redirect(RelayState['originUrl']);
           } else {
             res.redirect(config.public_url);  
           }
         }).catch(function(err) {
           console.log(err);
-          if (req.body.originUrl) {
-            res.redirect(req.body.originUrl);
+          if (RelayState['originUrl']) {
+            res.redirect(RelayState['originUrl']);
           } else {
             res.redirect(config.public_url);  
           }
