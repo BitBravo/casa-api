@@ -14,10 +14,18 @@ router.post('/saml', async (req, res, next) => {
         }, {
           $set: {saml_cert: req.body.SAMLResponse}
         }).then(function(data) {
-           res.redirect(config.public_url);
+          if (req.body.originUrl) {
+            res.redirect(req.body.originUrl);
+          } else {
+            res.redirect(config.public_url);  
+          }
         }).catch(function(err) {
           console.log(err);
-          res.redirect(config.public_url);
+          if (req.body.originUrl) {
+            res.redirect(req.body.originUrl);
+          } else {
+            res.redirect(config.public_url);  
+          }
         })
     })
 
@@ -111,8 +119,10 @@ createAbsorbUser = function (token, user,response, course_id) {
                         res.on('end', function (){
                           resp = JSON.parse("{" + resp.substr(1).slice(0, -1)+ "}");
                           console.log(resp);
+                          console.log(user);
 
                           User.find({"email":user.email}).then(function(data){
+                            console.log(data)
                             return response.status(200).json({
                                 status: 200,
                                 data: data
