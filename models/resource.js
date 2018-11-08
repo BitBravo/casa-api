@@ -57,7 +57,8 @@ var resourceSchema = new Schema({
     cta_url: {type: String},
     cta_order: {type: Number},
     is_cta_button: {type: Boolean}
-  }]
+  }],
+  ogDescription: {type: String}
 
 },{
   timestamps: true
