@@ -42,6 +42,8 @@ var resourceSchema = new Schema({
     ref : 'user',
   },
   isGated:{type: Boolean},
+  isProtected:{type: Boolean},
+  password:{type: String},
   last_mod:{ type : Date , default: Date.now},
   view_count :{type:Number},
   downloads:{type:Number},
