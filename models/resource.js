@@ -42,6 +42,8 @@ var resourceSchema = new Schema({
     ref : 'user',
   },
   isGated:{type: Boolean},
+  isProtected:{type: Boolean},
+  password:{type: String},
   last_mod:{ type : Date , default: Date.now},
   view_count :{type:Number},
   downloads:{type:Number},
@@ -57,7 +59,8 @@ var resourceSchema = new Schema({
     cta_url: {type: String},
     cta_order: {type: Number},
     is_cta_button: {type: Boolean}
-  }]
+  }],
+  ogDescription: {type: String}
 
 },{
   timestamps: true

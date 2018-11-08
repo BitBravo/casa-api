@@ -18,18 +18,19 @@ const FILE_CONTENT_INDEXER_LAMBDA = config.FILE_CONTENT_INDEXER_LAMBDA;
 var es = new elastic(config.host);
 var s3 = new aws.S3(config.s3_aws);
 client = ses.createClient(config.aws_lock);
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
-
-S3deleteObject = function (item ) {
+S3deleteObject = function (item) {
     var item = decodeURIComponent(item);
     var item = item.match(/([^\/]*)\/*$/)[1];
 
     s3.deleteObject({
-      Bucket: config.s3_aws.Bucket,
-      Key: config.s3_cardImage_folder + item
-    },function (err,data){console.log(err);console.log(data);})
+        Bucket: config.s3_aws.Bucket,
+        Key: config.s3_cardImage_folder + item
+    }, function (err, data) { console.log(err); console.log(data); })
 }
-     //search results in UI: 
+//search results in UI: 
 //https://es:q55uQ5t4EcUsXh8nhs2DcQGb5XCsdw@es.casa.crts.io/cards/_search?size=500
 //curl -X POST "https://es:q55uQ5t4EcUsXh8nhs2DcQGb5XCsdw@es.casa.crts.io/cards/docs/_delete_by_query" -H 'Content-Type: application/json' -d' { "query": { "match_all": {  } } } '
 
@@ -38,8 +39,8 @@ S3deleteObject = function (item ) {
 /* for manually creating/updating index */
 function createIndex(data) {
     var query = es.bulkQuery('cards', 'docs');
-    query.create('my_id7', {env:"dev",title:'test 7777', audience: ['ab','bc']});
-    query.create('my_id8', {env:"dev",title:'test 8888', audience: ['abddd','bcddd']});
+    query.create('my_id7', { env: "dev", title: 'test 7777', audience: ['ab', 'bc'] });
+    query.create('my_id8', { env: "dev", title: 'test 8888', audience: ['abddd', 'bcddd'] });
     es.execBulk(query.value());
 }
 
@@ -48,9 +49,9 @@ router.get('/tests', async (req, res, next) => {
     // prod: "https://es:q55uQ5t4EcUsXh8nhs2DcQGb5XCsdw@es.casa.crts.io/cards/docs",
     // dev: "https://es:q55uQ5t4EcUsXh8nhs2DcQGb5XCsdw@35.169.149.16/cards/docs"
 
-    findOn = {publish : true};
+    findOn = { publish: true };
 
-    Resource.find(findOn).sort({createdAt: 'asc'}).then(function(data) {
+    Resource.find(findOn).sort({ createdAt: 'asc' }).then(function (data) {
         if (data.length > 0) {
             var query = es.bulkQuery('cards', 'docs');
             console.log(" starting for  " + data.length);
@@ -65,20 +66,20 @@ router.get('/tests', async (req, res, next) => {
     });
 
     return res.status(200).json({
-                message: 'ran successful',
-                status: 200
-            })
+        message: 'ran successful',
+        status: 200
+    })
 })
 
 // indxing via lambda             
 function indexFileContentForSearch(resource) {
     attachment = [];
-    let url = resource.url == '' ?  'a' : resource.url ;
-    
+    let url = resource.url == '' ? 'a' : resource.url;
+
     element = {
-            'env' : config.elastic_prod, "_id" : resource._id, "title" : resource.title,
-            'audience' : resource.audience, 'html' : resource.html, 
-            'topics' : resource.topics, 'type' : resource.type, 'url' : url,
+        'env': config.elastic_prod, "_id": resource._id, "title": resource.title,
+        'audience': resource.audience, 'html': resource.html,
+        'topics': resource.topics, 'type': resource.type, 'url': url,
     };
 
     if (resource.uploaded_files && resource.uploaded_files.length > 0) {
@@ -88,7 +89,7 @@ function indexFileContentForSearch(resource) {
     }
 
     element["attachment"] = attachment;
-    
+
     return new Promise((resolve, reject) => {
         lambda.invoke({
             FunctionName: FILE_CONTENT_INDEXER_LAMBDA,
@@ -111,18 +112,23 @@ add external resource
 */
 router.post('/resource', passport.authenticate('jwt'), upload.any('file'), async (req, res, next) => {
     if (!req.user || !req.user.role) {
-                return res.status(401).json({
-                    status: 401,
-                    message: "Unauthorized"
-                })
-            }
+        return res.status(401).json({
+            status: 401,
+            message: "Unauthorized"
+        })
+    }
 
     // convert string to boolean
     if (req.body.isGated && req.body.isGated == 'true') req.body.isGated = true;
     else if (req.body.isGated && req.body.isGated == 'false') req.body.isGated = false;
 
+    if (req.body.isProtected && req.body.isProtected == 'true') req.body.isProtected = true;
+    else if (req.body.isProtected && req.body.isProtected == 'false') req.body.isProtected = false;
+    
+    req.body.password = req.body.password ? bcrypt.hashSync(req.body.password, saltRounds) : '';
+
     if (req.body.publish && req.body.publish == 'true') req.body.publish = true;
-    else  if (req.body.publish && req.body.publish == 'false') req.body.publish = false;
+    else if (req.body.publish && req.body.publish == 'false') req.body.publish = false;
 
     req.body.creator = req.user.first_name + " " + req.user.last_name;
     req.body.admin_id = req.user._id;
@@ -130,60 +136,62 @@ router.post('/resource', passport.authenticate('jwt'), upload.any('file'), async
     req.body.cta = req.body.cta ? JSON.parse(req.body.cta) : []
 
     async.waterfall([
-        function(cb) {              
-                    if(req.files){
-                        var arr = [];
-                            async.each(req.files,function(item, done) {
-                                   if(item.fieldname == 'file'){
-                                       req.body['cardImage'] = item.location
-                                    }
-                                   else if(item.fieldname == 'multiple_file'){
-                                      var i = {
-                                        name:item.originalname,
-                                        url:item.location
-                                      }
-                                      arr.push(i)
-                                   }
-                                done();
-                            }, function(err) {
-                                if(err) {
-                                    console.log("There was an error" + err);
-                                } else {
-                                    if (arr.length > 0) req.body['uploaded_files'] = arr
-                                    cb(null , "ok")
-                                }
-                            });
+        function (cb) {
+            if (req.files) {
+                var arr = [];
+                async.each(req.files, function (item, done) {
+                    if (item.fieldname == 'file') {
+                        req.body['cardImage'] = item.location
                     }
-                    else{
-                        cb(null , "ok")
+                    else if (item.fieldname == 'multiple_file') {
+                        var i = {
+                            name: item.originalname,
+                            url: item.location
+                        }
+                        arr.push(i)
                     }
+                    done();
+                }, function (err) {
+                    if (err) {
+                        console.log("There was an error" + err);
+                    } else {
+                        if (arr.length > 0) req.body['uploaded_files'] = arr
+                        cb(null, "ok")
+                    }
+                });
+            }
+            else {
+                cb(null, "ok")
+            }
         },
-        function(ok, cb) {
-                var temp = req.body["uploaded_files"];
-                if(temp!=undefined){
-    
+        function (ok, cb) {
+            var temp = req.body["uploaded_files"];
+            if (temp != undefined) {
+
                 req.body["uploaded_files"] = [];
                 for (i in temp) {
-                    req.body["uploaded_files"].push({url: temp[i], name:temp[i]})
-                }}
-    
-            if(ok == 'ok') {
+                    req.body["uploaded_files"].push({ url: temp[i], name: temp[i] })
+                }
+            }
+
+            if (ok == 'ok') {
                 if (!req.body.type) type = 'dummy';
-                
-                Type.findOne({name:req.body.type}).then(function(data){
-                  if (req.body.default_image && req.body.default_image== 'true'){
-                    if(data){
-                        req.body['cardImage'] = data.default_image;
+
+                Type.findOne({ name: req.body.type }).then(function (data) {
+                    if (req.body.default_image && req.body.default_image == 'true') {
+                        if (data) {
+                            req.body['cardImage'] = data.default_image;
+                        }
                     }
-                }}).then(function(){
-                   Resource.create(req.body).then(function(resource)  {
+                }).then(function () {
+                    Resource.create(req.body).then(function (resource) {
                         indexFileContentForSearch(resource);
 
                         return res.status(200).json({
                             status: 200,
                             message: "Resource Added Successfully"
                         })
-                    }).catch(function(err) {
+                    }).catch(function (err) {
                         var reason = err.message
                         return res.status(500).json({
                             status: 500,
@@ -192,15 +200,15 @@ router.post('/resource', passport.authenticate('jwt'), upload.any('file'), async
                     })
                 })
             }
-        }], function(err) {});
+        }], function (err) { });
 });
 
 /*
 edit an external resource
 f*/
 router.put('/resource/:id', passport.authenticate('jwt'), upload.any('file'), async (req, res, next) => {
-    
-   
+
+
     if (!req.user || (req.user.role != "admin" && req.user.role != "super_admin")) {
         return res.status(401).json({
             status: 401,
@@ -208,45 +216,49 @@ router.put('/resource/:id', passport.authenticate('jwt'), upload.any('file'), as
         })
     }
 
-     // convert string to boolean
+    // convert string to boolean
     if (req.body.isGated && req.body.isGated == 'true') req.body.isGated = true;
     else if (req.body.isGated && req.body.isGated == 'false') req.body.isGated = false;
+    
+    if (req.body.isProtected && req.body.isProtected == 'true') req.body.isProtected = true;
+    else if (req.body.isProtected && req.body.isProtected == 'false') req.body.isProtected = false;
+
+    req.body.password = req.body.password ? bcrypt.hashSync(req.body.password, saltRounds) : '';
 
     if (req.body.publish && req.body.publish == 'true') req.body.publish = true;
-    else  if (req.body.publish && req.body.publish == 'false') req.body.publish = false;
-
+    else if (req.body.publish && req.body.publish == 'false') req.body.publish = false;
+    
     var id = req.params.id;
     delete req.body.creator;
 
     req.body.cta = req.body.cta ? JSON.parse(req.body.cta) : []
 
     req.body.last_mod = Date.now();
-    
+
     if (req.file) {
         req.body['cardImage'] = req.file.location;
     }
 
     for (i in req.files) {
         item = req.files[i];
-         if(item.fieldname == 'file')    req.body['cardImage'] = item.location
-         else if(item.fieldname == 'multiple_file'){
-                req.body['uploaded_files'] = req.body['uploaded_files'] ? req.body['uploaded_files'] : [];
-              req.body['uploaded_files'].push({
-                name:item.originalname,
-                url:item.location
-              });
+        if (item.fieldname == 'file') req.body['cardImage'] = item.location
+        else if (item.fieldname == 'multiple_file') {
+            req.body['uploaded_files'] = req.body['uploaded_files'] ? req.body['uploaded_files'] : [];
+            req.body['uploaded_files'].push({
+                name: item.originalname,
+                url: item.location
+            });
         }
     }
     var temp = req.body["uploaded_files"];
-    if(temp!=undefined)
-    {
-        
-    req.body["uploaded_files"] = [];
+    if (temp != undefined) {
 
-    for (i in temp) {
-        req.body["uploaded_files"].push({url: temp[i], name:temp[i]})
+        req.body["uploaded_files"] = [];
+
+        for (i in temp) {
+            req.body["uploaded_files"].push({ url: temp[i], name: temp[i] })
+        }
     }
-}
 
     History = {
         modified: Date.now(),
@@ -254,59 +266,56 @@ router.put('/resource/:id', passport.authenticate('jwt'), upload.any('file'), as
     }
 
     async.waterfall([
-        function(done)
-        {
-            if(req.body.default_image=='true'){
-            
-                Type.findOne({"name":req.body.type}).then(resolve=>{
-                    req.body.cardImage =resolve.default_image;
-                
-                done(null);
-            });
+        function (done) {
+            if (req.body.default_image == 'true') {
+
+                Type.findOne({ "name": req.body.type }).then(resolve => {
+                    req.body.cardImage = resolve.default_image;
+
+                    done(null);
+                });
             }
-            else
-            {
+            else {
                 done(null);
             }
         },
-        function(done)
-        {
-         
+        function (done) {
+
             Resource.findOneAndUpdate({
                 _id: id
             }, {
-                $set: req.body,
-                $inc: {
-                    revision: 1
-                },
-                $push: {
-                    history: History
-                }
-            }).then(function(data) {
-                if(req.body['cardImage'] && data.cardImage){
-                     S3deleteObject(data.cardImage)
-                }
-                if(req.body['uploaded_files'] && data.uploaded_files){
-                    for (i in data.uploaded_files)
-                        S3deleteObject(data.uploaded_files[i].url)
-                }
-                
-                req.body['_id'] = id;
-                indexFileContentForSearch(req.body);
+                    $set: req.body,
+                    $inc: {
+                        revision: 1
+                    },
+                    $push: {
+                        history: History
+                    }
+                }).then(function (data) {
+                    if (req.body['cardImage'] && data.cardImage) {
+                        S3deleteObject(data.cardImage)
+                    }
+                    if (req.body['uploaded_files'] && data.uploaded_files) {
+                        for (i in data.uploaded_files)
+                            S3deleteObject(data.uploaded_files[i].url)
+                    }
 
-                return res.status(200).json({
-                    status: 200,
-                    message: "Data Updated Successfully"
+                    req.body['_id'] = id;
+                    indexFileContentForSearch(req.body);
+
+                    return res.status(200).json({
+                        status: 200,
+                        message: "Data Updated Successfully"
+                    })
+                }).catch(function (err) {
+                    return res.status(500).json({
+                        status: 500,
+                        message: err.message
+                    })
                 })
-            }).catch(function(err) {
-                return res.status(500).json({
-                    status: 500,
-                    message: err.message
-                })
-            })
 
             done(null);
-        }],function(){});
+        }], function () { });
 
 
 
@@ -315,13 +324,13 @@ router.put('/resource/:id', passport.authenticate('jwt'), upload.any('file'), as
 /*
 get all external resource
 */
-router.get('/resource',async (req, res, next) => {
+router.get('/resource', async (req, res, next) => {
     sortOn = {
         createdAt: 'desc'
     };
     limit = parseInt(req.query.count) || 20;
-    skipOn = 0 ;
-    selectOn = null;
+    skipOn = 0;
+    selectOn = '-password';
     findOn = {}
 
     if (req.query.sort == 'popularity') {
@@ -330,113 +339,115 @@ router.get('/resource',async (req, res, next) => {
     }
 
     if (req.query.publish) {
-        findOn = {publish : true};
+        findOn = { publish: true };
     }
 
 
     var page = parseInt(req.query.page) || 1;
 
-    if(page>1){
+    if (page > 1) {
 
-        skipOn = req.query.count?(page*parseInt(req.query.count))-parseInt(req.query.count) :(page*20)-20 
+        skipOn = req.query.count ? (page * parseInt(req.query.count)) - parseInt(req.query.count) : (page * 20) - 20
     }
     passport.authenticate('jwt', async (err, token) => {
-      if(token && !token.role){
-        
-      }
+        if (token && !token.role) {
+
+        }
 
 
 
-         if(token && !token.role && token.customer_role || !token){
-            findOn = {publish : true}
-         }
+        if (token && !token.role && token.customer_role || !token) {
+            findOn = { publish: true }
+        }
 
-         Resource.find(findOn).select(selectOn).sort(sortOn).skip(skipOn).limit(limit).then(function(data) {
-            
+        Resource.find(findOn).select(selectOn).sort(sortOn).skip(skipOn).limit(limit).then(function (data) {
+
             if (data.length < 0) {
                 return res.status(404).json({
                     status: 404,
                     data: data
                 })
-            } else{ 
+            } else {
                 data = fixCTA(data);
 
-                   if(token && !token.role && token.customer_role || !token){
-                      console.log(data.length);
-                       var published_data = _.filter(data,(d)=> {
-                        return d.publish == 'true'});
-                       published_data = data;
-                       
-                       async.each(data,function(item, done) {
-                       
-                            if(item.isGated == true){
-                                if(!token){
+                if (token && !token.role && token.customer_role || !token) {
+                    console.log(data.length);
+                    var published_data = _.filter(data, (d) => {
+                        return d.publish == 'true'
+                    });
+                    published_data = data;
+
+                    async.each(data, function (item, done) {
+
+                        if (item.isGated == true) {
+                            if (!token) {
                                 item.url = null;
-                               }
-                               // else if(token && !token.role && token.customer_role){
-                               //      var roles = item.role
-                               //      console.log(token.customer_role);
-                               //      console.log(roles);
-                               //      var index = roles.indexOf(token.customer_role)
-                               //      if(index==-1){
-                               //       item.url = null ;
-                               //      }
-                               // }
                             }
-                     
-                            done();
-                        }, function(err) {
-                            if(err) {
-                                console.log("There was an error" + err);
-                            } else {
-                                res.status(200).json({status: 200,data: published_data})
-                            }
-                        });
-                   }
-                   else{
-                   res.status(200).json({status: 200,data: data})
-                    
-                    
-            } }
-                
+                            // else if(token && !token.role && token.customer_role){
+                            //      var roles = item.role
+                            //      console.log(token.customer_role);
+                            //      console.log(roles);
+                            //      var index = roles.indexOf(token.customer_role)
+                            //      if(index==-1){
+                            //       item.url = null ;
+                            //      }
+                            // }
+                        }
+
+                        done();
+                    }, function (err) {
+                        if (err) {
+                            console.log("There was an error" + err);
+                        } else {
+                            res.status(200).json({ status: 200, data: published_data })
+                        }
+                    });
+                }
+                else {
+                    res.status(200).json({ status: 200, data: data })
+
+
+                }
+            }
+
         })
-        .catch(function(err) {
-            return res.status(500).json({
-                status: 500,
-                message: err.message
+            .catch(function (err) {
+                return res.status(500).json({
+                    status: 500,
+                    message: err.message
+                })
             })
-        })
 
     })(req, res, next);
 });
 
 
-function find_resource (res, findOn,skipOn,limitOn) {
+function find_resource(res, findOn, skipOn, limitOn) {
     findOn['publish'] = true;
-    Resource.find(findOn).skip(skipOn).limit(limitOn).then(function(data) {
+    Resource.find(findOn).skip(skipOn).limit(limitOn).then(function (data) {
         if (data.length < 0) {
-                return res.status(404).json({
-                    status: 404,
-                    data: data
-                })
-            } else {
-                if (findOn['_id'] && findOn['_id']["$in"]) {
-                            let ids = findOn['_id']["$in"];
-                            data.sort(function(a,b) {
-                                    return ids.findIndex(id => a._id.equals(id)) -
+            return res.status(404).json({
+                status: 404,
+                data: data
+            })
+        } else {
+            if (findOn['_id'] && findOn['_id']["$in"]) {
+                let ids = findOn['_id']["$in"];
+                data.sort(function (a, b) {
+                    return ids.findIndex(id => a._id.equals(id)) -
                         ids.findIndex(id => b._id.equals(id));
-                            });
-                    }
-
-                    data = fixCTA(data);
-
-                return res.status(200).json({
-                    status: 200,
-                    data: data
-                })
+                });
             }
-        })
-        .catch(function(err) {
+
+            data = fixCTA(data);
+
+            return res.status(200).json({
+                status: 200,
+                data: data
+            })
+        }
+    })
+        .catch(function (err) {
             return res.status(500).json({
                 status: 500,
                 message: err.message
@@ -445,40 +456,41 @@ function find_resource (res, findOn,skipOn,limitOn) {
 }
 
 
-function elastic_search (query, topics=[],audience=[],type=[]) {
+function elastic_search(query, topics = [], audience = [], type = []) {
     // query += ' ' + topics.join(' ')   + ' ' + audience.join( ' ') + ' ' + type.join (' ');
     // var filters =[ ];
     // if (topics.length > 0) filters.push( { "terms":  { "topics":  topics}});
     // if (audience.length > 0) filters.push( { "terms":  { "audience":  topics}});
     // if (type.length > 0) filters.push( { "terms":  { "type":  type}});
     const esQuery = {
-            query: {
-                bool: {
-                    should: [{
-                        "multi_match" : {
-                             "query" : query, // search for exact match of any of thse word after space
-                             fields : ["title^2", "url", "html", "upload_files.file.content"],
-                              fuzziness: '1'
-                        } },
-                        {
-                            query_string: {
-                                "type": "phrase_prefix",
-                                fields: ["title^2", "url", "html", "upload_files.file.content"],
-                                query: query
-                            }
-                        },
-                 ], 
-                    minimum_should_match: 1,
+        query: {
+            bool: {
+                should: [{
+                    "multi_match": {
+                        "query": query, // search for exact match of any of thse word after space
+                        fields: ["title^2", "url", "html", "upload_files.file.content"],
+                        fuzziness: '1'
+                    }
                 },
+                {
+                    query_string: {
+                        "type": "phrase_prefix",
+                        fields: ["title^2", "url", "html", "upload_files.file.content"],
+                        query: query
+                    }
+                },
+                ],
+                minimum_should_match: 1,
             },
-            _source: ["_id", "title"]
-        };
+        },
+        _source: ["_id", "title"]
+    };
 
     return es.search(
         'cards',
         esQuery, {
             size: 100,
-             sort: "_score:desc"
+            sort: "_score:desc"
         });
 }
 
@@ -487,70 +499,70 @@ function elastic_search (query, topics=[],audience=[],type=[]) {
 get resource info on the basis of filter.
 */
 router.get('/filter', async (req, res, next) => {
-     var dec = decodeURI(req.url);
-     var api = url.parse(dec, true)
-     var queryData = api.query;
-     var limitOn = parseInt(req.query.count) || 20;
-     var skipOn = 0;
-     var page = parseInt(req.query.page) || 1;
-     var findOn ={};
+    var dec = decodeURI(req.url);
+    var api = url.parse(dec, true)
+    var queryData = api.query;
+    var limitOn = parseInt(req.query.count) || 20;
+    var skipOn = 0;
+    var page = parseInt(req.query.page) || 1;
+    var findOn = {};
 
-     if(page>1){
-        skipOn = req.query.count?(page*parseInt(req.query.count))-parseInt(req.query.count) :(page*20)-20 
-     }
-
-     if(queryData.type){
-        queryData.type =   typeof(queryData.type) =='string' ? queryData.type.split() :  queryData.type;
-        findOn['type'] = { $in: queryData.type}  
+    if (page > 1) {
+        skipOn = req.query.count ? (page * parseInt(req.query.count)) - parseInt(req.query.count) : (page * 20) - 20
     }
 
-    if(queryData.topics){
-        queryData.topics =   typeof(queryData.topics) =='string'? queryData.topics.split() :  queryData.topics;
-        findOn['topics'] =  { $elemMatch: { $in: queryData.topics} }
+    if (queryData.type) {
+        queryData.type = typeof (queryData.type) == 'string' ? queryData.type.split() : queryData.type;
+        findOn['type'] = { $in: queryData.type }
     }
 
-    if(queryData.audience){
-        queryData.audience =   typeof(queryData.audience) =='string' ? queryData.audience.split() :  queryData.audience;
-        findOn['audience'] =  { $elemMatch: { $in: queryData.audience} } 
+    if (queryData.topics) {
+        queryData.topics = typeof (queryData.topics) == 'string' ? queryData.topics.split() : queryData.topics;
+        findOn['topics'] = { $elemMatch: { $in: queryData.topics } }
     }
 
-     if (req.query.search && req.query.search.length > 0 && req.query.search != 'undefined') {
-         elastic_search(queryData.search, queryData.topics, queryData.audience, queryData.type).then((data) => {
-            
+    if (queryData.audience) {
+        queryData.audience = typeof (queryData.audience) == 'string' ? queryData.audience.split() : queryData.audience;
+        findOn['audience'] = { $elemMatch: { $in: queryData.audience } }
+    }
+
+    if (req.query.search && req.query.search.length > 0 && req.query.search != 'undefined') {
+        elastic_search(queryData.search, queryData.topics, queryData.audience, queryData.type).then((data) => {
+
             console.log(data[0].hits.hits);
-            findOn['_id'] =  { $in: data[0].hits.hits.map(a => a._id)};
-            find_resource (res, findOn,skipOn,limitOn);
+            findOn['_id'] = { $in: data[0].hits.hits.map(a => a._id) };
+            find_resource(res, findOn, skipOn, limitOn);
         });
-    
-     } else {
-        
-        find_resource (res, findOn,skipOn,limitOn);
+
+    } else {
+
+        find_resource(res, findOn, skipOn, limitOn);
     }
-    
+
 })
 
-increase_view_count = function(Slug){
-    
+increase_view_count = function (Slug) {
+
     Resource.update({
-            slug: Slug
-        }, {
+        slug: Slug
+    }, {
             $inc: {
                 view_count: 1
             }
-        }).then(function(data) {}, function(err) {
+        }).then(function (data) { }, function (err) {
             console.log(err)
         })
 }
 
-increase_download_count = function(Slug){
-    
+increase_download_count = function (Slug) {
+
     Resource.update({
-            slug: Slug
-        }, {
+        slug: Slug
+    }, {
             $inc: {
                 downloads: 1
             }
-        }).then(function(data) {}, function(err) {
+        }).then(function (data) { }, function (err) {
             console.log(err)
         })
 }
@@ -559,7 +571,7 @@ increase_download_count = function(Slug){
 /*
 get one external resource info.
 */
-router.get('/resource/:slug',async (req, res, next) => {
+router.get('/resource/:slug', async (req, res, next) => {
     var Slug = req.params.slug;
     var query = req.query;
 
@@ -578,69 +590,107 @@ router.get('/resource/:slug',async (req, res, next) => {
             }
         }
     }
-     passport.authenticate('jwt', async (err, token) => {
+    passport.authenticate('jwt', async (err, token) => {
 
         Resource.find(findOn).sort({
             createdAt: 'desc'
-        }).then(function(data) {
+        }).then(function (data) {
             if (data.length < 0) {
                 return res.status(404).json({
                     status: 404,
                     data: data
                 })
             } else {
+                // if (data[0].isProtected) {
+                //     if (!req.query.password || !bcrypt.compareSync(req.query.password, data[0].password)) {
+                //         return res.status(401).json({
+                //             status: 401,
+                //             error: {msg: 'password is incorrect.'},
+                //             data: []
+                //         });
+                //     }
+                // }
                 data = fixCTA(data);
                 if (Slug != 'external' && Slug != 'dynamic' && Slug != 'native') {
-                
-                // if(!token && data[0].isGated){
-                //   return res.status(401).json({message:"Unauthorized"})
-                // }
-                // all this commented code because any1 can see the details if requested.
-                
 
-                // if(token){
-                      // if(data[0].isGated == true){
-                      //   if(true){
-                          if(query.data=="download"){    
-                                increase_download_count(Slug);
-                          }else{
-                                increase_view_count(Slug);
-                          }
-                                   
-                           return res.status(200).json({data:data})
-                      //   }
-                      //   else{
-                      //     return res.status(401).json({message:"Unauthorized role"})
-                      //   }
-                      // }
+                    // if(!token && data[0].isGated){
+                    //   return res.status(401).json({message:"Unauthorized"})
+                    // }
+                    // all this commented code because any1 can see the details if requested.
 
-                      // else{
-                      //   increase_view_count(Slug)
-                      //   return res.status(200).json({data:data})}
-                      // }
-               // else{
-               //  increase_view_count(Slug)
-               //  return res.status(200).json({status: 200,data: data})
-                // }
+
+                    // if(token){
+                    // if(data[0].isGated == true){
+                    //   if(true){
+                    if (query.data == "download") {
+                        increase_download_count(Slug);
+                    } else {
+                        increase_view_count(Slug);
+                    }
+
+                    return res.status(200).json({ data: data })
+                    //   }
+                    //   else{
+                    //     return res.status(401).json({message:"Unauthorized role"})
+                    //   }
+                    // }
+
+                    // else{
+                    //   increase_view_count(Slug)
+                    //   return res.status(200).json({data:data})}
+                    // }
+                    // else{
+                    //  increase_view_count(Slug)
+                    //  return res.status(200).json({status: 200,data: data})
+                    // }
+                }
+                else if (token.role && (Slug == 'external' || Slug == 'dynamic' || Slug == 'native')) {
+                    return res.status(200).json({ status: 200, data: data })
+                }
             }
-            else if(token.role && (Slug == 'external' || Slug == 'dynamic' || Slug == 'native')){
-              return res.status(200).json({status: 200,data: data})
-            }
-           }
         })
-        .catch(function(err) {
-            return res.status(500).json({
-                status: 500,
-                message: err.message
+            .catch(function (err) {
+                return res.status(500).json({
+                    status: 500,
+                    message: err.message
+                })
             })
-        })
- })(req, res, next);
+    })(req, res, next);
+});
 
 
-
-})
-
-
+router.post('/resource/checkpassword', async (req, res, next) => {
+    var query = req.body;
+    
+    Resource.find({
+        slug: query.slug
+    }).then(function (data) {
+        if (data[0].isProtected) {
+            if (!query.password || !bcrypt.compareSync(query.password, data[0].password)) {
+                return res.status(200).json({
+                    status: 200,
+                    msg: 'Password is incorrect',
+                    result: false
+                });
+            } else {
+                return res.status(200).json({
+                    status: 200,
+                    msg: 'Password is correct',
+                    result: true
+                });
+            }
+        } else {
+            return res.status(200).json({
+                status: 200,
+                msg: 'This resource is not protected',
+                result: true
+            });
+        }
+    }).catch(function (err) {
+        console.log(err);
+        return res.status(500).json(err);
+    })
+});
 
 
 
@@ -658,38 +708,38 @@ router.post('/resource/delete', passport.authenticate('jwt'), async (req, res, n
         _id: {
             $in: arr
         }
-    }).then(function(data) {
-               async.each(data,function(item, done) {
-                                S3deleteObject(item.cardImage);
-                                if (item.uploaded_files)
-                                    for (i in item.uploaded_files) S3deleteObject(item.uploaded_files[i].url)
-                                done();
-                            }, function(err) {
-                                    Resource.remove({
-                                            _id: {
-                                                $in: arr
-                                            }
-                                        }).then(function(data) {
-                                                    async.each(arr,function(item1, done1) {
-                                                        var query = es.bulkQuery('cards', 'docs');
-                                                        query.remove(item1)
-                                                        es.execBulk(query.value());
-                                                        done1();
-                                                    }, function(err) {
-                                                    })
-                                               
-                                            return res.status(200).json({
-                                                status: 200,
-                                                message: "Data removed successfully"
-                                            })
-                                        }).catch(function(err) {
-                                            return res.status(500).json({
-                                                status: 500,
-                                                message: err.message
-                                            })
-                                        })
-                                 })
-    }).catch(function(err) {
+    }).then(function (data) {
+        async.each(data, function (item, done) {
+            S3deleteObject(item.cardImage);
+            if (item.uploaded_files)
+                for (i in item.uploaded_files) S3deleteObject(item.uploaded_files[i].url)
+            done();
+        }, function (err) {
+            Resource.remove({
+                _id: {
+                    $in: arr
+                }
+            }).then(function (data) {
+                async.each(arr, function (item1, done1) {
+                    var query = es.bulkQuery('cards', 'docs');
+                    query.remove(item1)
+                    es.execBulk(query.value());
+                    done1();
+                }, function (err) {
+                })
+
+                return res.status(200).json({
+                    status: 200,
+                    message: "Data removed successfully"
+                })
+            }).catch(function (err) {
+                return res.status(500).json({
+                    status: 500,
+                    message: err.message
+                })
+            })
+        })
+    }).catch(function (err) {
     })
 })
 
@@ -703,19 +753,19 @@ router.delete('/resource/:id', passport.authenticate('jwt'), async (req, res, ne
     }
     Resource.findOneAndRemove({
         _id: id
-    }).then(function(data) {
+    }).then(function (data) {
         S3deleteObject(data.cardImage)
 
-    var query = es.bulkQuery('cards', 'docs');
-    query.remove(data._id);
-    es.execBulk(query.value());
+        var query = es.bulkQuery('cards', 'docs');
+        query.remove(data._id);
+        es.execBulk(query.value());
 
 
         return res.status(200).json({
             status: 200,
             message: "Data removed successfully"
         })
-    }).catch(function(err) {
+    }).catch(function (err) {
         return res.status(500).json({
             status: 500,
             message: err.message
@@ -727,39 +777,39 @@ router.delete('/resource/:id', passport.authenticate('jwt'), async (req, res, ne
 router.post('/upload_editor', upload.single('file'), async (req, res, next) => {
 
     return res.status(200).json({
-                url: req.file.location
-            });
+        url: req.file.location
+    });
 })
 
 
 
 
 router.post('/featured', passport.authenticate('jwt'), async (req, res, next) => {
-    
-    Featured.update(req.body).then(function(data)  {
-                            return res.status(200).json({
-                            status: 200,
-                            message: "Featured Added Successfully"
-                        })
-                    }).catch(function(err) {
-                        var reason = err.message
-                        return res.status(500).json({
-                            status: 500,
-                            message: reason
-                        })
-                    })
-   })
+
+    Featured.update(req.body).then(function (data) {
+        return res.status(200).json({
+            status: 200,
+            message: "Featured Added Successfully"
+        })
+    }).catch(function (err) {
+        var reason = err.message
+        return res.status(500).json({
+            status: 500,
+            message: reason
+        })
+    })
+})
 
 
 
 router.get('/featured', async (req, res, next) => {
-    Featured.find().then(function(data) {
-            return res.status(200).json({
-                status: 200,
-                data: data
-            })
+    Featured.find().then(function (data) {
+        return res.status(200).json({
+            status: 200,
+            data: data
         })
-        .catch(function(err) {
+    })
+        .catch(function (err) {
             return res.status(500).json({
                 status: 500,
                 message: err.message
@@ -767,30 +817,30 @@ router.get('/featured', async (req, res, next) => {
         })
 });
 
-router.get('/list_publish',async (req, res, next) => {
+router.get('/list_publish', async (req, res, next) => {
     sortOn = {
         createdAt: 'desc'
     };
     limit = parseInt(req.query.count) || 20;
-    selectOn = {'id':1, 'title':1};
-    findOn = {publish : true};
-    
+    selectOn = { 'id': 1, 'title': 1 };
+    findOn = { publish: true };
 
-    Resource.find(findOn).select(selectOn).sort(sortOn).limit(limit).then(function(data) {
-            if (data.length < 0) {
-                return res.status(404).json({
-                    status: 404,
-                    data: data
-                })
-            } else{ 
-                 res.status(200).json({status: 200,data: data})
-            }
-        }).catch(function(err) {
-            return res.status(500).json({
-                status: 500,
-                message: err.message
+
+    Resource.find(findOn).select(selectOn).sort(sortOn).limit(limit).then(function (data) {
+        if (data.length < 0) {
+            return res.status(404).json({
+                status: 404,
+                data: data
             })
+        } else {
+            res.status(200).json({ status: 200, data: data })
+        }
+    }).catch(function (err) {
+        return res.status(500).json({
+            status: 500,
+            message: err.message
         })
+    })
 });
 
 module.exports = router
