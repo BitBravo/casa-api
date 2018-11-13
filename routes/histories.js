@@ -191,7 +191,6 @@ router.get('/histories/visitors/monthly', async (req, res, next) => {
                 counts: { $sum: 1 }
             },
         },
-        
         {
             $group: {
                 _id: {
