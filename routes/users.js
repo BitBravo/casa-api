@@ -119,7 +119,7 @@ new CronJob('*/10 * */8 * * */5', function () {
             let Preceding_Week = "", New_User_Count = 0, Popular_Resource = "", View_Count = "";
             let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-            Preceding_Week = `Firday, ${months[new Date().getMonth()]} ${new Date().getDate()} - Friday, ${months[oneWeekAgo.getMonth()]} ${oneWeekAgo.getDate()}`
+            Preceding_Week = `Friday, ${months[oneWeekAgo.getMonth()]} ${oneWeekAgo.getDate()} - Friday, ${months[new Date().getMonth()]} ${new Date().getDate()}`
             New_User_Count = user.length;
             if (popular.length > 0) {
                 Popular_Resource = popular[0].title;
