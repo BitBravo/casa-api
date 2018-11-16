@@ -101,7 +101,7 @@ new CronJob('*/10 * */8 * * */5', function () {
 
 
 
-new CronJob('*/10 * */8 * * */5', function () {
+new CronJob('0 0 8 * * */5', function () {
     var user = [];
     var popular = [];
     var oneWeekAgo = new Date();
@@ -176,7 +176,7 @@ new CronJob('*/10 * */8 * * */5', function () {
            
         });
     });
-}, null, true, 'America/Los_Angeles');
+}, null, true, 'America/Tegucigalpa');
 
 
 /*
