@@ -1,5 +1,6 @@
 const Featured = require('../models/featured.js');
 const Resource = require('../models/resource.js');
+const Position = require('../models/position.js');
 const Type = require('../models/type.js');
 const passport = require('passport');
 const express = require('express');
@@ -321,6 +322,62 @@ router.put('/resource/:id', passport.authenticate('jwt'), upload.any('file'), as
 
 });
 
+
+router.post('/resource/position', passport.authenticate('jwt'),  async (req, res, next) => {
+    
+    if (!req.user || (req.user.role != "admin" && req.user.role != "super_admin")) {
+        return res.status(401).json({
+            status: 401,
+            message: "Unauthorized"
+        })
+    }
+
+    const positions = req.body;
+    Position.remove({}).exec((err, result) => {
+        if (err) {
+            res.status(500).send(err);
+        }
+        savePositions(res, positions);
+    })
+});
+
+router.get('/resource/position', async (req, res, next) => {
+    try {
+        Position.find().exec((err, positions) => {
+          if (err) {
+            res.status(500).send(err);
+          }
+          res.json(positions);
+        });
+      } catch (err) {
+        res.status(500).send(err);
+      }
+});
+
+async function savePositions(res, positions) {
+    let results = [];
+    for (let i = 0; i < positions.length; i++) {
+      // Let's sanitize inputs
+      var result = await addPosition(positions[i]);
+      if (result) {
+        results.push(result);
+      }
+    }
+    return res.json(results);
+  }
+
+function addPosition(position) {
+    return new Promise(resolve => {
+        const newPosition = new Position(position);
+        newPosition.save((err, result) => {
+            if (err) {
+                res.status(500).send(err);
+            } else {
+                resolve(result);
+            }
+        });
+    });
+}
 /*
 get all external resource
 */
