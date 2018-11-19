@@ -28,7 +28,7 @@ passport.use('register', new LocalStrategy({
          var reason  = err.message
           if (reason.indexOf('E11000') > -1) {
              if (reason.indexOf('email') > -1) {
-               reason = 'Email Id already exits. ';
+               reason = 'This email address is already in use. ';
              }
            }
            return done(reason);
@@ -61,7 +61,7 @@ passport.use('register_user', new LocalStrategy({
          var reason  = err.message
           if (reason.indexOf('E11000') > -1) {
              if (reason.indexOf('email') > -1) {
-               reason = 'Email Id already exits. ';
+               reason = 'This email address is already in use. ';
              }
            }
            return done(reason);
