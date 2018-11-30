@@ -94,7 +94,7 @@ router.get('/histories', async (req, res, next) => {
                 message: err.message
             })
         })
-})
+});
 
 /*
 * get all user histories by year
@@ -191,7 +191,6 @@ router.get('/histories/visitors/monthly', async (req, res, next) => {
                 counts: { $sum: 1 }
             },
         },
-        
         {
             $group: {
                 _id: {
