@@ -106,24 +106,21 @@ new CronJob('0 0 8 * * 5', function () {
     var popular = [];
     var oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    User.find({ "createdAt": { $lte: new Date(), $gte: oneWeekAgo } }).then(function (data) {
-        data.forEach(d => {
+    User.find({ "createdAt": { $lte: new Date(), $gte: oneWeekAgo } }).then(function (users) {
+        users.forEach(d => {
             user.push(d);
         });
 
-        Resource.find({ "createdAt": { $lte: new Date(), $gte: oneWeekAgo } }).sort({ "view_count": -1 }).limit(1).then(function (data) {
-            data.forEach(d => {
-                popular.push(d);
-            });
+        Resource.find().sort({ "view_count": -1 }).limit(1).then(function (resources) {
 
             let Preceding_Week = "", New_User_Count = 0, Popular_Resource = "", View_Count = "";
             let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
             Preceding_Week = `Friday, ${months[oneWeekAgo.getMonth()]} ${oneWeekAgo.getDate()} - Friday, ${months[new Date().getMonth()]} ${new Date().getDate()}`
             New_User_Count = user.length;
-            if (popular.length > 0) {
-                Popular_Resource = popular[0].title;
-                View_Count = popular[0].view_count;
+            if (resources.length > 0) {
+                Popular_Resource = resources[0].title;
+                View_Count = resources[0].view_count;
             }
 
             User.find({ $or: [{ role: "admin" }, { role: "super_admin" }] }).sort({
