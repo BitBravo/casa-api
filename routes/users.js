@@ -61,7 +61,7 @@ new CronJob('*/10 * */8 * * */5', function () {
                     code: message,
                     global_merge_vars: [{
                         "name": "PASS_RESET_LINK",
-                        "content": 'https://casa-dev.crts.io/password/' + token
+                        "content": 'https://learn.texascasa.org/password/' + token
                     }]
                 },
                 async: false

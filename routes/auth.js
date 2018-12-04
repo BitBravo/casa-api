@@ -48,7 +48,7 @@ router.post('/forgot', async (req, res, next) => {
                   }],
                   global_merge_vars: [  {
                               "name": "PASS_RESET_LINK",
-                              "content": 'https://casa-dev.crts.io/password/'+token
+                              "content": 'https://learn.texascasa.org/password/'+token
                           }]
               },
               async: false
