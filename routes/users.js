@@ -2,6 +2,7 @@ const User = require('../models/user.js');
 const LoginLog = require('../models/login-log.js');
 const Role = require('../models/role.js');
 const Resource = require('../models/resource.js');
+const UserHistory = require('../models/userHistory.js');
 const express = require('express');
 const router = express.Router();
 var LocalStrategy = require('passport-local').Strategy;
@@ -111,22 +112,31 @@ new CronJob('0 0 8 * * 5', function () {
             user.push(d);
         });
 
-        Resource.find().sort({ "view_count": -1 }).limit(1).then(function (resources) {
+        UserHistory.aggregate([
+            {
+                $match: { eventType: 'View' }
+            },
+            {
+                $group: {
+                    _id: "$content",
+                    counts: { $sum: 1 }
+                }
+            },
+            { $sort: { counts: -1 } },
+            { $limit: 1 }
+        ]).then(function (data) {
+            console.log(data);
 
-            let Preceding_Week = "", New_User_Count = 0, Popular_Resource = "", View_Count = "";
+            let Preceding_Week = "", New_User_Count = 0, Popular_Resource = data[0]._id, View_Count = data[0].counts;
             let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
             Preceding_Week = `Friday, ${months[oneWeekAgo.getMonth()]} ${oneWeekAgo.getDate()} - Friday, ${months[new Date().getMonth()]} ${new Date().getDate()}`
             New_User_Count = user.length;
-            if (resources.length > 0) {
-                Popular_Resource = resources[0].title;
-                View_Count = resources[0].view_count;
-            }
 
             User.find({ $or: [{ role: "admin" }, { role: "super_admin" }] }).sort({
                 createdAt: 'desc'
             }).then(function (admins) {
-                if(admins.length > 0) {
+                if (admins.length > 0) {
                     admins.forEach(function (admin) {
                         const params = {
                             template_name: "casa-weekly-digest",
@@ -158,7 +168,7 @@ new CronJob('0 0 8 * * 5', function () {
                             },
                             async: false
                         };
-            
+
                         mandrill_client.messages.sendTemplate(params, result => {
                             console.log(result);
                         }, e => {
@@ -170,7 +180,7 @@ new CronJob('0 0 8 * * 5', function () {
                 .catch(function (err) {
                     console.log(err)
                 })
-           
+
         });
     });
 }, null, true, 'America/Tegucigalpa');
@@ -644,6 +654,9 @@ router.get('/sendemail', async (req, resp, next) => {
     var user = [];
     var oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    UserHistory.find({ "createdAt": { $lte: new Date(), $gte: oneWeekAgo } }).then(function (data) {
+        console.log(data);
+    });
     User.find({ "createdAt": { $lte: new Date(), $gte: oneWeekAgo }, "customer_role": { "$exists": true } }).then(function (data) {
         data.forEach(d => {
             user.push(d);
