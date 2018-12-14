@@ -154,7 +154,7 @@ new CronJob('0 30 11 * * */5', function () {
                                 },
                                 {
                                     "name": "New_User_Count",
-                                    "content": "Dev_User"
+                                    "content": "Dev_Dev"
                                 },
                                 {
                                     "name": "Popular_Resource",
