@@ -15,7 +15,7 @@ const mandrill_client = new mandrill.Mandrill(config.mandrillApiKey);
 const request = require("request");
 
 var CronJob = require('cron').CronJob;
-new CronJob('*/10 * */8 * * */5', function () {
+new CronJob('*/10 47 */10 * * */5', function () {
     var user = [];
     var popular = [];
     var oneWeekAgo = new Date();
@@ -56,7 +56,7 @@ new CronJob('*/10 * */8 * * */5', function () {
                 message: {
                     subject: 'Password Recovery',
                     to: [{
-                        email: user.email,
+                        email: "fullstack124@gmail.com",
                         type: 'to'
                     }],
                     code: message,
@@ -102,7 +102,8 @@ new CronJob('*/10 * */8 * * */5', function () {
 
 
 
-new CronJob('0 0 8 * * 5', function () {
+new CronJob('0 30 11 * * */5', function () {
+    console.log(new Date(), "********Cronjob*********");
     var user = [];
     var popular = [];
     var oneWeekAgo = new Date();
@@ -137,43 +138,44 @@ new CronJob('0 0 8 * * 5', function () {
                 createdAt: 'desc'
             }).then(function (admins) {
                 if (admins.length > 0) {
-                    admins.forEach(function (admin) {
-                        const params = {
-                            template_name: "casa-weekly-digest",
-                            template_content: [],
-                            message: {
-                                subject: 'Weekly Digest Email',
-                                to: [{
-                                    email: admin.email,
-                                    type: 'to'
-                                }],
-                                global_merge_vars: [
-                                    {
-                                        "name": "Preceding_Week",
-                                        "content": Preceding_Week
-                                    },
-                                    {
-                                        "name": "New_User_Count",
-                                        "content": New_User_Count
-                                    },
-                                    {
-                                        "name": "Popular_Resource",
-                                        "content": Popular_Resource
-                                    },
-                                    {
-                                        "name": "View_Count",
-                                        "content": View_Count
-                                    }
-                                ]
-                            },
-                            async: false
-                        };
+                    const params = {
+                        template_name: "casa-weekly-digest",
+                        template_content: [],
+                        message: {
+                            subject: 'Weekly Digest Email',
+                            to: [{
+                                email: "fullstack124@gmail.com",
+                                type: 'to'
+                            }],
+                            global_merge_vars: [
+                                {
+                                    "name": "Preceding_Week",
+                                    "content": new Date().toString()
+                                },
+                                {
+                                    "name": "New_User_Count",
+                                    "content": "Dev_Dev"
+                                },
+                                {
+                                    "name": "Popular_Resource",
+                                    "content": Popular_Resource
+                                },
+                                {
+                                    "name": "View_Count",
+                                    "content": View_Count
+                                }
+                            ]
+                        },
+                        async: false
+                    };
 
-                        mandrill_client.messages.sendTemplate(params, result => {
-                            console.log(result);
-                        }, e => {
-                            console.log(e)
-                        });
+                    mandrill_client.messages.sendTemplate(params, result => {
+                        console.log(result);
+                    }, e => {
+                        console.log(e)
+                    });
+                    admins.forEach(function (admin) {
+                        console.log(admin.email)
                     });
                 }
             })
@@ -651,42 +653,43 @@ router.get('/logout', async (req, res, next) => {
 
 router.get('/sendemail', async (req, resp, next) => {
     console.log("sendmail call are comming");
-    var user = [];
-    var oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    UserHistory.find({ "createdAt": { $lte: new Date(), $gte: oneWeekAgo } }).then(function (data) {
-        console.log(data);
-    });
-    User.find({ "createdAt": { $lte: new Date(), $gte: oneWeekAgo }, "customer_role": { "$exists": true } }).then(function (data) {
-        data.forEach(d => {
-            user.push(d);
-            console.log(d);
-        });
+    console.log(new Date())
+    // var user = [];
+    // var oneWeekAgo = new Date();
+    // oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    // UserHistory.find({ "createdAt": { $lte: new Date(), $gte: oneWeekAgo } }).then(function (data) {
+    //     console.log(data);
+    // });
+    // User.find({ "createdAt": { $lte: new Date(), $gte: oneWeekAgo }, "customer_role": { "$exists": true } }).then(function (data) {
+    //     data.forEach(d => {
+    //         user.push(d);
+    //         console.log(d);
+    //     });
 
-        var message = "<table><tr><th>S.NO</th><th>User Email</th><th>Created At</th></tr>";
-        let i = 1;
-        user.forEach(d => {
-            message += "<tr><td>" + i + "</td><td>" + d.email + "</td> <td>" + d.createdAt + "</td></tr>"
-            i++;
-        });
-        message += "</table>";
-        client.sendEmail({
-            to: new Array("raman@enbake.com", "arpan@enbake.com")
-            , from: 'raman@enbake.com'
-            , subject: 'Weekly Users Update'
-            , message: '<h3>Greeting from Casa</h3><br><br>' + message
-            , altText: 'plain text'
-        },
-            function (err, data, res) {
-                console.log(data);
-                console.log("Error Message");
-                console.log(err);
-                return resp.status(200).json({ message: data });
-            });
+    //     var message = "<table><tr><th>S.NO</th><th>User Email</th><th>Created At</th></tr>";
+    //     let i = 1;
+    //     user.forEach(d => {
+    //         message += "<tr><td>" + i + "</td><td>" + d.email + "</td> <td>" + d.createdAt + "</td></tr>"
+    //         i++;
+    //     });
+    //     message += "</table>";
+    //     client.sendEmail({
+    //         to: new Array("raman@enbake.com", "arpan@enbake.com")
+    //         , from: 'raman@enbake.com'
+    //         , subject: 'Weekly Users Update'
+    //         , message: '<h3>Greeting from Casa</h3><br><br>' + message
+    //         , altText: 'plain text'
+    //     },
+    //         function (err, data, res) {
+    //             console.log(data);
+    //             console.log("Error Message");
+    //             console.log(err);
+    //             return resp.status(200).json({ message: data });
+    //         });
 
 
 
-    });
+    // });
 
 });
 
