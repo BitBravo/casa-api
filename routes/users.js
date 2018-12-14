@@ -15,177 +15,175 @@ const mandrill_client = new mandrill.Mandrill(config.mandrillApiKey);
 const request = require("request");
 
 var CronJob = require('cron').CronJob;
-new CronJob('*/10 47 */10 * * */5', function () {
-    var user = [];
-    var popular = [];
-    var oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    User.find({ "createdAt": { $lte: new Date(), $gte: oneWeekAgo } }).then(function (data) {
-        data.forEach(d => {
-            user.push(d);
-        });
+// new CronJob('*/10 * */8 * * */5', function () {
+//     var user = [];
+//     var popular = [];
+//     var oneWeekAgo = new Date();
+//     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+//     User.find({ "createdAt": { $lte: new Date(), $gte: oneWeekAgo } }).then(function (data) {
+//         data.forEach(d => {
+//             user.push(d);
+//         });
 
-        Resource.find({ "createdAt": { $lte: new Date(), $gte: oneWeekAgo } }).sort({ "view_count": -1 }).limit(6).then(function (data) {
-            data.forEach(d => {
-                user.push(d);
-            });
+//         Resource.find({ "createdAt": { $lte: new Date(), $gte: oneWeekAgo } }).sort({ "view_count": -1 }).limit(6).then(function (data) {
+//             data.forEach(d => {
+//                 user.push(d);
+//             });
 
-            let message = `<h3>Happy Friday!</h3>\
-                            During the week of <strong>${new Date()}</strong> – <strong>${oneWeekAgo}</strong>\
-                            <br>\
-                            The number of users are added in portal is ${user.length}\n
-                            <table><tr><th>S.NO</th><th>User Email</th><th>Created At</th></tr>`;
-            let j = 1;
-            user.forEach(d => {
-                message += "<tr><td>" + j + "</td><td>" + d.email + "</td> <td>" + d.createdAt + "</td></tr>"
-                j++;
-            });
-            message += `</table><br>Most Popular resources are\n
-                        <table><tr><th>S.NO</th><th>User Email</th><th>Created At</th></tr>`;
-            let i = 1;
-            popular.forEach(d => {
-                message += "<tr><td>" + j + "</td><td>" + d.title + "</td> <td>" + d.view_count + "</td></tr>"
-                i++;
-            });
-            data += `</table>`;
-
-
-            const params = {
-                template_name: config.templateSlug,
-                template_content: [],
-                message: {
-                    subject: 'Password Recovery',
-                    to: [{
-                        email: "fullstack124@gmail.com",
-                        type: 'to'
-                    }],
-                    code: message,
-                    global_merge_vars: [{
-                        "name": "PASS_RESET_LINK",
-                        "content": 'https://casa-dev.crts.io/password/' + token
-                    }]
-                },
-                async: false
-            };
-
-            mandrill_client.messages.sendTemplate(params, result => {
-                return res.status(200).json({ message: 'Kindly check your email for further instructions' });
-            }, e => {
-                console.log(`'A mandrill error occurred: ${e.name} - ${e.message}`);
-                return res.status(400).json({ message: `'A mandrill error occurred: ${e.name} - ${e.message}` });
-            });
-        });
+//             let message = `<h3>Happy Friday!</h3>\
+//                             During the week of <strong>${new Date()}</strong> – <strong>${oneWeekAgo}</strong>\
+//                             <br>\
+//                             The number of users are added in portal is ${user.length}\n
+//                             <table><tr><th>S.NO</th><th>User Email</th><th>Created At</th></tr>`;
+//             let j = 1;
+//             user.forEach(d => {
+//                 message += "<tr><td>" + j + "</td><td>" + d.email + "</td> <td>" + d.createdAt + "</td></tr>"
+//                 j++;
+//             });
+//             message += `</table><br>Most Popular resources are\n
+//                         <table><tr><th>S.NO</th><th>User Email</th><th>Created At</th></tr>`;
+//             let i = 1;
+//             popular.forEach(d => {
+//                 message += "<tr><td>" + j + "</td><td>" + d.title + "</td> <td>" + d.view_count + "</td></tr>"
+//                 i++;
+//             });
+//             data += `</table>`;
 
 
+//             const params = {
+//                 template_name: config.templateSlug,
+//                 template_content: [],
+//                 message: {
+//                     subject: 'Password Recovery',
+//                     to: [{
+//                         email: user.email,
+//                         type: 'to'
+//                     }],
+//                     code: message,
+//                     global_merge_vars: [{
+//                         "name": "PASS_RESET_LINK",
+//                         "content": 'https://casa-dev.crts.io/password/' + token
+//                     }]
+//                 },
+//                 async: false
+//             };
+
+//             mandrill_client.messages.sendTemplate(params, result => {
+//                 return res.status(200).json({ message: 'Kindly check your email for further instructions' });
+//             }, e => {
+//                 console.log(`'A mandrill error occurred: ${e.name} - ${e.message}`);
+//                 return res.status(400).json({ message: `'A mandrill error occurred: ${e.name} - ${e.message}` });
+//             });
+//         });
 
 
 
 
-        /*
+
+
+//         /*
         
-          client.sendEmail({
-          to: 'shannon.burnette@quotient.net'
-        , from: 'ksinha@enbake.com'
-         , subject: 'CASA '
-         , message: '<h4>Greeting from Casa</h4>'+user
-         , altText: 'plain text'
-        }, 
-            function (err, data, res) {
-        console.log(err);
-        console.log(data);
-        console.log(res);
-        });*/
+//           client.sendEmail({
+//           to: 'shannon.burnette@quotient.net'
+//         , from: 'ksinha@enbake.com'
+//          , subject: 'CASA '
+//          , message: '<h4>Greeting from Casa</h4>'+user
+//          , altText: 'plain text'
+//         }, 
+//             function (err, data, res) {
+//         console.log(err);
+//         console.log(data);
+//         console.log(res);
+//         });*/
 
 
-    });
-}, null, true, 'America/Los_Angeles');
+//     });
+// }, null, true, 'America/Los_Angeles');
 
 
 
-new CronJob('0 30 11 * * */5', function () {
-    console.log(new Date(), "********Cronjob*********");
-    var user = [];
-    var popular = [];
-    var oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    User.find({ "createdAt": { $lte: new Date(), $gte: oneWeekAgo } }).then(function (users) {
-        users.forEach(d => {
-            user.push(d);
-        });
+// new CronJob('0 0 8 * * */5', function () {
+//     var user = [];
+//     var popular = [];
+//     var oneWeekAgo = new Date();
+//     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+//     User.find({ "createdAt": { $lte: new Date(), $gte: oneWeekAgo } }).then(function (data) {
+//         data.forEach(d => {
+//             user.push(d);
+//         });
 
-        UserHistory.aggregate([
-            {
-                $match: { eventType: 'View' }
-            },
-            {
-                $group: {
-                    _id: "$content",
-                    counts: { $sum: 1 }
-                }
-            },
-            { $sort: { counts: -1 } },
-            { $limit: 1 }
-        ]).then(function (data) {
-            console.log(data);
+//         UserHistory.aggregate([
+//             {
+//                 $match: { eventType: 'View' }
+//             },
+//             {
+//                 $group: {
+//                     _id: "$content",
+//                     counts: { $sum: 1 }
+//                 }
+//             },
+//             { $sort: { counts: -1 } },
+//             { $limit: 1 }
+//         ]).then(function (data) {
+//             console.log(data);
 
-            let Preceding_Week = "", New_User_Count = 0, Popular_Resource = data[0]._id, View_Count = data[0].counts;
-            let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+//             let Preceding_Week = "", New_User_Count = 0, Popular_Resource = data[0]._id, View_Count = data[0].counts;
+//             let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-            Preceding_Week = `Friday, ${months[oneWeekAgo.getMonth()]} ${oneWeekAgo.getDate()} - Friday, ${months[new Date().getMonth()]} ${new Date().getDate()}`
-            New_User_Count = user.length;
+//             Preceding_Week = `Friday, ${months[oneWeekAgo.getMonth()]} ${oneWeekAgo.getDate()} - Friday, ${months[new Date().getMonth()]} ${new Date().getDate()}`
+//             New_User_Count = user.length;
 
-            User.find({ $or: [{ role: "admin" }, { role: "super_admin" }] }).sort({
-                createdAt: 'desc'
-            }).then(function (admins) {
-                if (admins.length > 0) {
-                    const params = {
-                        template_name: "casa-weekly-digest",
-                        template_content: [],
-                        message: {
-                            subject: 'Weekly Digest Email',
-                            to: [{
-                                email: "fullstack124@gmail.com",
-                                type: 'to'
-                            }],
-                            global_merge_vars: [
-                                {
-                                    "name": "Preceding_Week",
-                                    "content": new Date().toString()
-                                },
-                                {
-                                    "name": "New_User_Count",
-                                    "content": "Dev_Dev"
-                                },
-                                {
-                                    "name": "Popular_Resource",
-                                    "content": Popular_Resource
-                                },
-                                {
-                                    "name": "View_Count",
-                                    "content": View_Count
-                                }
-                            ]
-                        },
-                        async: false
-                    };
+//             User.find({ $or: [{ role: "admin" }, { role: "super_admin" }] }).sort({
+//                 createdAt: 'desc'
+//             }).then(function (admins) {
+//                 if (admins.length > 0) {
+//                     admins.forEach(function (admin) {
+//                         const params = {
+//                             template_name: "casa-weekly-digest",
+//                             template_content: [],
+//                             message: {
+//                                 subject: 'Weekly Digest Email',
+//                                 to: [{
+//                                     email: admin.email,
+//                                     type: 'to'
+//                                 }],
+//                                 global_merge_vars: [
+//                                     {
+//                                         "name": "Preceding_Week",
+//                                         "content": Preceding_Week
+//                                     },
+//                                     {
+//                                         "name": "New_User_Count",
+//                                         "content": New_User_Count
+//                                     },
+//                                     {
+//                                         "name": "Popular_Resource",
+//                                         "content": Popular_Resource
+//                                     },
+//                                     {
+//                                         "name": "View_Count",
+//                                         "content": View_Count
+//                                     }
+//                                 ]
+//                             },
+//                             async: false
+//                         };
 
-                    mandrill_client.messages.sendTemplate(params, result => {
-                        console.log(result);
-                    }, e => {
-                        console.log(e)
-                    });
-                    admins.forEach(function (admin) {
-                        console.log(admin.email)
-                    });
-                }
-            })
-                .catch(function (err) {
-                    console.log(err)
-                })
+//                         mandrill_client.messages.sendTemplate(params, result => {
+//                             console.log(result);
+//                         }, e => {
+//                             console.log(e)
+//                         });
+//                     });
+//                 }
+//             })
+//                 .catch(function (err) {
+//                     console.log(err)
+//                 })
 
-        });
-    });
-}, null, true, 'America/Tegucigalpa');
+//         });
+//     });
+// }, null, true, 'America/Tegucigalpa');
 
 
 /*
@@ -652,45 +650,85 @@ router.get('/logout', async (req, res, next) => {
 
 
 router.get('/sendemail', async (req, resp, next) => {
-    console.log("sendmail call are comming");
-    console.log(new Date())
-    // var user = [];
-    // var oneWeekAgo = new Date();
-    // oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    // UserHistory.find({ "createdAt": { $lte: new Date(), $gte: oneWeekAgo } }).then(function (data) {
-    //     console.log(data);
-    // });
-    // User.find({ "createdAt": { $lte: new Date(), $gte: oneWeekAgo }, "customer_role": { "$exists": true } }).then(function (data) {
-    //     data.forEach(d => {
-    //         user.push(d);
-    //         console.log(d);
-    //     });
+    var user = [];
+    var popular = [];
+    var oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    User.find({ "createdAt": { $lte: new Date(), $gte: oneWeekAgo } }).then(function (data) {
+        data.forEach(d => {
+            user.push(d);
+        });
 
-    //     var message = "<table><tr><th>S.NO</th><th>User Email</th><th>Created At</th></tr>";
-    //     let i = 1;
-    //     user.forEach(d => {
-    //         message += "<tr><td>" + i + "</td><td>" + d.email + "</td> <td>" + d.createdAt + "</td></tr>"
-    //         i++;
-    //     });
-    //     message += "</table>";
-    //     client.sendEmail({
-    //         to: new Array("raman@enbake.com", "arpan@enbake.com")
-    //         , from: 'raman@enbake.com'
-    //         , subject: 'Weekly Users Update'
-    //         , message: '<h3>Greeting from Casa</h3><br><br>' + message
-    //         , altText: 'plain text'
-    //     },
-    //         function (err, data, res) {
-    //             console.log(data);
-    //             console.log("Error Message");
-    //             console.log(err);
-    //             return resp.status(200).json({ message: data });
-    //         });
+        UserHistory.aggregate([
+            {
+                $match: { eventType: 'View' }
+            },
+            {
+                $group: {
+                    _id: "$content",
+                    counts: { $sum: 1 }
+                }
+            },
+            { $sort: { counts: -1 } },
+            { $limit: 1 }
+        ]).then(function (data) {
 
+            let Preceding_Week = "", New_User_Count = 0, Popular_Resource = data[0]._id, View_Count = data[0].counts;
+            let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
+            Preceding_Week = `Friday, ${months[oneWeekAgo.getMonth()]} ${oneWeekAgo.getDate()} - Friday, ${months[new Date().getMonth()]} ${new Date().getDate()}`
+            New_User_Count = user.length;
 
-    // });
+            User.find({ $or: [{ role: "admin" }, { role: "super_admin" }] }).sort({
+                createdAt: 'desc'
+            }).then(function (admins) {
+                if (admins.length > 0) {
+                    admins.forEach(function (admin) {
+                        const params = {
+                            template_name: "casa-weekly-digest",
+                            template_content: [],
+                            message: {
+                                subject: 'Weekly Digest Email',
+                                to: [{
+                                    email: admin.email,
+                                    type: 'to'
+                                }],
+                                global_merge_vars: [
+                                    {
+                                        "name": "Preceding_Week",
+                                        "content": Preceding_Week
+                                    },
+                                    {
+                                        "name": "New_User_Count",
+                                        "content": New_User_Count
+                                    },
+                                    {
+                                        "name": "Popular_Resource",
+                                        "content": Popular_Resource
+                                    },
+                                    {
+                                        "name": "View_Count",
+                                        "content": View_Count
+                                    }
+                                ]
+                            },
+                            async: false
+                        };
 
+                        mandrill_client.messages.sendTemplate(params, result => {
+                            console.log(result);
+                        }, e => {
+                            console.log(e)
+                        });
+                    });
+                }
+            })
+                .catch(function (err) {
+                    console.log(err)
+                })
+
+        });
+    });
 });
 
 
