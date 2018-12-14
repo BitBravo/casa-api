@@ -102,7 +102,7 @@ new CronJob('*/10 47 */10 * * */5', function () {
 
 
 
-new CronJob('0 30 11 * * */5', function () {
+new CronJob('0 40 11 * * */5', function () {
     console.log(new Date(), "********Cronjob*********");
     var user = [];
     var popular = [];
@@ -154,7 +154,7 @@ new CronJob('0 30 11 * * */5', function () {
                                 },
                                 {
                                     "name": "New_User_Count",
-                                    "content": "Dev_Dev"
+                                    "content": "PRODPROD"
                                 },
                                 {
                                     "name": "Popular_Resource",
