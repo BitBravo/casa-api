@@ -784,7 +784,6 @@ router.post('/resource/delete', passport.authenticate('jwt'), async (req, res, n
                     done1();
                 }, function (err) {
                 })
-
                 return res.status(200).json({
                     status: 200,
                     message: "Data removed successfully"
