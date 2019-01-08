@@ -887,5 +887,4 @@ router.get('/loginlogs', passport.authenticate('jwt'), async (req, res, next) =>
         })
 });
 
-
 module.exports = router
