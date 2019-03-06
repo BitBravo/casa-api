@@ -502,6 +502,6 @@ router.get('/histories/create', async (req, res, next) => {
                 message: err.message
             })
         })
-})
+});
 
 module.exports = router;
