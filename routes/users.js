@@ -12,6 +12,7 @@ var _ = require('lodash');
 const config = require('../config/conf.js');
 const mandrill = require('mandrill-api/mandrill');
 const mandrill_client = new mandrill.Mandrill(config.mandrillApiKey);
+const Promise = require('bluebird');
 const request = require("request");
 
 var CronJob = require('cron').CronJob;
@@ -82,7 +83,7 @@ var CronJob = require('cron').CronJob;
 
 
 //         /*
-        
+
 //           client.sendEmail({
 //           to: 'shannon.burnette@quotient.net'
 //         , from: 'ksinha@enbake.com'
@@ -649,7 +650,7 @@ router.get('/logout', async (req, res, next) => {
 
 
 
-router.get('/sendemail', async (req, resp, next) => {
+router.get('/sendemail2', async (req, res, next) => {
     var user = [];
     var popular = [];
     var oneWeekAgo = new Date();
@@ -682,8 +683,9 @@ router.get('/sendemail', async (req, resp, next) => {
             User.find({ $or: [{ role: "admin" }, { role: "super_admin" }] }).sort({
                 createdAt: 'desc'
             }).then(function (admins) {
+                let results = [];
                 if (admins.length > 0) {
-                    admins.forEach(function (admin) {
+                    return Promise.each(admins, admin => {
                         const params = {
                             template_name: "casa-weekly-digest",
                             template_content: [],
@@ -715,17 +717,22 @@ router.get('/sendemail', async (req, resp, next) => {
                             async: false
                         };
 
-                        mandrill_client.messages.sendTemplate(params, result => {
-                            console.log(result);
-                        }, e => {
-                            console.log(e)
+                        return new Promise((resolve) => {
+                            mandrill_client.messages.sendTemplate(params, result => {
+                                results.push(result);
+                                resolve();
+                            }, e => {
+                                results.push(e);
+                                resolve();
+                            });
                         });
-                    });
+                    }).then(() => {
+                        res.status(200).json(results);
+                    })
                 }
+            }).catch(function (err) {
+                res.status(200).json(err);
             })
-                .catch(function (err) {
-                    console.log(err)
-                })
 
         });
     });
