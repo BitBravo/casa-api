@@ -343,12 +343,12 @@ router.get('/histories/daily', async (req, res, next) => {
             });
         }
     })
-        .catch(function (err) {
-            return res.status(500).json({
-                status: 500,
-                message: err.message
-            })
+    .catch(function (err) {
+        return res.status(500).json({
+            status: 500,
+            message: err.message
         })
+    })
 });
 
 /*
@@ -475,8 +475,6 @@ router.get('/histories/hourly', async (req, res, next) => {
         })
 });
 
-
-
 /*
 add a userHistory
 */
@@ -496,12 +494,12 @@ router.get('/histories/create', async (req, res, next) => {
             })
         }
     })
-        .catch(function (err) {
-            return res.status(500).json({
-                status: 500,
-                message: err.message
-            })
+    .catch(function (err) {
+        return res.status(500).json({
+            status: 500,
+            message: err.message
         })
+    })
 });
 
 module.exports = router;

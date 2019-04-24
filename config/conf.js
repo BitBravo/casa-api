@@ -2,28 +2,24 @@ const Joi = require('joi');
 require('dotenv').config();
 
 const envVarsSchema = Joi.object({
-
-    
-        DB_HOST:    Joi.string().required(),
-        DB_SECRET:   Joi.string().required(), 
-        mandrillApiKey:  Joi.string().required(),
-        templateSlug:  Joi.string().required(),
-        region1:  Joi.string().required(),
-        accessKeyId1:  Joi.string().required(),
-        secretAccessKey1: Joi.string().required(),
-        accessKeyId:  Joi.string().required(),
-        secretAccessKey:  Joi.string().required(),
-        Bucket:  Joi.string().required(),
-        s3_cardImage_folder:  Joi.string().required(),
-        s3_attachment_folder:  Joi.string().required(),
-        FILE_CONTENT_INDEXER_LAMBDA: Joi.string().required(),
-        Elastic_host: Joi.string().required(),
-        aws_key: Joi.string().required(),
-        aws_secret: Joi.string().required(),
-        elastic_prod:Joi.string().required(),
-        public_url:Joi.string().required()
-
-
+    DB_HOST:    Joi.string().required(),
+    DB_SECRET:   Joi.string().required(), 
+    mandrillApiKey:  Joi.string().required(),
+    templateSlug:  Joi.string().required(),
+    region1:  Joi.string().required(),
+    accessKeyId1:  Joi.string().required(),
+    secretAccessKey1: Joi.string().required(),
+    accessKeyId:  Joi.string().required(),
+    secretAccessKey:  Joi.string().required(),
+    Bucket:  Joi.string().required(),
+    s3_cardImage_folder:  Joi.string().required(),
+    s3_attachment_folder:  Joi.string().required(),
+    FILE_CONTENT_INDEXER_LAMBDA: Joi.string().required(),
+    Elastic_host: Joi.string().required(),
+    aws_key: Joi.string().required(),
+    aws_secret: Joi.string().required(),
+    elastic_prod:Joi.string().required(),
+    public_url:Joi.string().required()
 })
 
 if(Joi.validate(process.env, envVarsSchema)!=null){
@@ -67,11 +63,7 @@ const config = {
     auth0_client_secret:envVars.auth0_client_secret,
     auth0_get_token_url:envVars.auth0_get_token_url,
     auth0_management_api:envVars.auth0_management_api
-
 }
-
-
-
 
 module.exports = {
 	'secret':config.DB_SECRET,

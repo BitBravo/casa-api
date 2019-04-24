@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken')
 const express = require('express');
 const router = express.Router();
 var upload = require('./upload.js');
+const categories = require('./../config/categories')
 
 
 /*
@@ -492,5 +493,12 @@ router.delete('/topic/:id', passport.authenticate('jwt'), async (req, res, next)
         })
     })
 })
+
+router.get('/categories', passport.authenticate('jwt'), async (req, res, next) => {
+    res.status(200).json({
+        status: 200,
+        data: categories
+    })
+});
 
 module.exports = router
