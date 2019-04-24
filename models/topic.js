@@ -5,6 +5,7 @@ require('mongoose').Promise = global.Promise
 // create a schema
 var topicSchema = new Schema({
   name:{ type: String},
+  category: {type: String},
   admin_email: {type: String}
 },{
   timestamps: true

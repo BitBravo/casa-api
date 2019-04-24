@@ -349,6 +349,7 @@ router.post('/topic', passport.authenticate('jwt'), async (req, res, next) => {
     }
     req.body.admin_email = req.user.email;
     req.body.name = (req.body.name).trim()
+    req.body.category = (req.body.category).trim()
     Topic.create(req.body).then(function(type) {
         if (type) {
             return res.status(200).json({
@@ -376,6 +377,8 @@ router.put('/topic/:id', passport.authenticate('jwt'), async (req, res, next) =>
     }
     var id = req.params.id;
     req.body.name = (req.body.name).trim()
+    req.body.category = (req.body.category).trim()
+
     var data = req.body
 
     Topic.update({
@@ -494,7 +497,7 @@ router.delete('/topic/:id', passport.authenticate('jwt'), async (req, res, next)
     })
 })
 
-router.get('/categories', passport.authenticate('jwt'), async (req, res, next) => {
+router.get('/categories', async (req, res, next) => {
     res.status(200).json({
         status: 200,
         data: categories
