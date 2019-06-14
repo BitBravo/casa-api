@@ -8,7 +8,7 @@ var MongoClient = require('mongodb').MongoClient;
 var database  = conf.database;
 
 var MongoClient = require('mongodb').MongoClient;
-	MongoClient.connect(database,{ useNewUrlParser: true }, function(err, db) {
+	MongoClient.connect(database, { useNewUrlParser:true }, function(err, db) {
   if (err) throw err;
   	console.log("Database created!");
   db.close();
